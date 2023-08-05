@@ -1,6 +1,9 @@
 package main
 
-import "testing"
+import (
+	"os"
+	"testing"
+)
 
 func TestCreateNewDeck(t *testing.T) {
 
@@ -17,4 +20,22 @@ func TestCreateNewDeck(t *testing.T) {
 		t.Errorf("Error on Last Element , Expected King of Clubs but got %v", d[len(d)-1])
 	}
 
+}
+
+func TestSaveToFileAndReadDeckFromFile(t *testing.T) {
+
+	err := os.Remove("_testFile")
+	if err != nil {
+
+		newDeck := createNewDeck()
+		newDeck.saveToFile("_testFile")
+
+		newReadDeck := newDeckFromFile("_tetFile")
+
+		if len(newReadDeck) != 52 {
+			t.Errorf("Expected length of Deck is 52 but got %v", len(newReadDeck))
+		}
+
+		os.Remove("_testFile")
+	}
 }
