@@ -17,9 +17,13 @@ package main
 // - myNumber <- channel => wait for a value to be send to channel, when we get that value then assign it to myNumber
 // - fmt.Println(<- channel) => wait for a value to be send to channel, when we get log it immediately
 
+//Note:
+//- when main routine get value from channel it immediatley exit program as it has no other task to do
+
 import (
 	"fmt"
 	"net/http"
+	"time"
 )
 
 func main() {
@@ -27,7 +31,7 @@ func main() {
 	links := []string{
 		"https://www.facebook.com",
 		"https://www.google.com",
-		// "https://www.ishworpanta.com.np/?i=1",
+		"https://www.ishworpanta.com.np/?i=1",
 		"https://www.amazon.com",
 	}
 
@@ -37,7 +41,31 @@ func main() {
 		go checkLink(link, c)
 	}
 
-	fmt.Println(<-c)
+	// fmt.Println(<-c)
+	// fmt.Println(<-c)
+	// fmt.Println(<-c)
+	// fmt.Println(<-c)
+	// fmt.Println(<-c) => this will make main routine wait and program does not stop and hang, we have 4 slice data but print 5
+
+	// for i := 0; i < len(links); i++ {
+	// 	fmt.Println(<-c)
+	// }
+
+	/// Repeated Go Routine channel
+
+	// for {
+	// 	go checkLink(<-c, c)
+	// }
+
+	//same syntax
+	for l := range c {
+
+		go func(link string) {
+			time.Sleep(4 * time.Second)
+			go checkLink(link, c)
+		}(l)
+
+	}
 
 }
 
@@ -45,12 +73,14 @@ func checkLink(link string, c chan string) {
 	_, err := http.Get(link)
 	if err != nil {
 		// fmt.Println(link, err)
-		c <- "Might be down"
-		fmt.Println(link, "is down")
+		// c <- "CHANNEL MESSAGE : MIGHT DOWN"
+		c <- link
+		fmt.Println(link, "might down")
 		return
 	}
 
 	fmt.Println(link, " is up and running")
-	c <- "is runnning"
+	// c <- "CHANNEL MESSAGE : RUNNING"
+	c <- link
 
 }
