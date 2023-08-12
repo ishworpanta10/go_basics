@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"os"
 	"strings"
+	"time"
 )
 
 type queston struct {
@@ -15,6 +16,9 @@ type queston struct {
 
 func main() {
 	csvFilename := flag.String("csv", "problems.csv", "a csv file in the format of queston, answer")
+
+	timeLimit := flag.Int64("limit", 30, "time limit for quiz in seconds")
+
 	flag.Parse()
 
 	file, err := os.Open(*csvFilename)
@@ -32,22 +36,42 @@ func main() {
 
 	questions := parseLines(lines)
 
+	timer := time.NewTimer(time.Duration(*timeLimit) * time.Second)
+	// <-timer.C // It will block the code as it wait mesg from channel
+
 	correctCount := 0
+	// problemLoop:
 	for i, q := range questions {
+
 		fmt.Printf("Question #%d: %s =\n", i+1, q.q)
 
-		var answer string
-		fmt.Scanf("%s\n", &answer)
+		answerCh := make(chan string)
 
-		if q.a == answer {
-			correctCount++
-			// fmt.Printf("Correct Answer \n")
+		go func() {
+			var answer string
+			fmt.Scanf("%s\n", &answer)
+			answerCh <- answer
+		}()
+
+		select {
+
+		case <-timer.C:
+			fmt.Printf("Your time limit is completed (Allocated Second : %d)\n", *timeLimit)
+			fmt.Printf("You Score %d out of %d\n", correctCount, len(questions))
+			// break problemLoop
+			return
+
+		case answer := <-answerCh:
+			if answer == q.a {
+				correctCount++
+				// fmt.Printf("Correct Answer \n")
+			}
+
 		}
 
-		fmt.Printf("You Score %d out of %d\n", correctCount, len(questions))
+		// fmt.Println(questions)
 	}
-
-	// fmt.Println(questions)
+	fmt.Printf("You Score %d out of %d\n", correctCount, len(questions))
 }
 
 func parseLines(lines [][]string) []queston {
